@@ -102,7 +102,7 @@ get_model_func = lambda: get_model(
     cfg.recurrent_units,
     cfg.dense_size)
 
-from train_utils import train_folds
+from p0_train_utils import train_folds
 print("Starting to train models...")
 models = train_folds(x_train, y_train, cfg.fold_count, cfg.batch_size, get_model_func)
 
