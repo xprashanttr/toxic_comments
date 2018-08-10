@@ -3,14 +3,15 @@ import p0_config as cfg
 import p0_utilities as util
 import pandas as pd
 import numpy as np
+import csv
 
 '''
 Create Directories
 '''
-'''
+
 try: os.mkdir(cfg.result_path)
 except OSError: pass
-'''
+
 
 
 '''
@@ -31,11 +32,13 @@ print ("result_path - {}".format(cfg.result_path))
 print("Loading train data...")
 file_path = os.path.join(cfg.data_path, cfg.train_file)
 print ("Train file path - {}".format(file_path))
-train_data = pd.read_csv(file_path)
+train_data = pd.read_csv(file_path, error_bad_lines=False)
 
 print("Loading test data...")
 file_path = os.path.join(cfg.data_path, cfg.test_file)
 print ("Train file path - {}".format(file_path))
+#test_data = pd.read_csv(file_path, quoting=csv.QUOTE_NONE)
+#test_data = pd.read_csv(file_path, error_bad_lines=False)
 test_data = pd.read_csv(file_path)
 
 # Null Handling
@@ -52,11 +55,13 @@ tokenized_sentences_test, words_dict = util.tokenize_sentences(list_sentences_te
 words_dict[cfg.UNKNOWN_WORD] = len(words_dict)
 print("Training , Test and Tokenizing done")
 
+
 #########################
 print("Loading embeddings...")
 embedding_file_path=os.path.join(cfg.data_path, cfg.embedding_file)
-embedding_list, embedding_word_dict = util.read_embedding_list(embedding_file_path)
 
+embedding_list, embedding_word_dict = util.read_embedding_list(embedding_file_path)
+embedding_size = len(embedding_list[0])
 print("Loading embeddings done")
 
 
@@ -64,9 +69,9 @@ print("Preparing required embeddings...")
 embedding_list, embedding_word_dict = util.clear_embedding_list(embedding_list, embedding_word_dict, words_dict)
 
 embedding_word_dict[cfg.UNKNOWN_WORD] = len(embedding_word_dict)
-embedding_list.append([0.] * cfg.embedding_size)
+embedding_list.append([0.] * embedding_size)
 embedding_word_dict[cfg.END_WORD] = len(embedding_word_dict)
-embedding_list.append([-1.] * cfg.embedding_size)
+embedding_list.append([-1.] * embedding_size)
 
 embedding_matrix = np.array(embedding_list)
 
@@ -86,6 +91,22 @@ test_list_of_token_ids = util.convert_tokens_to_ids(
     
 x_train = np.array(train_list_of_token_ids)
 x_test = np.array(test_list_of_token_ids)
+
+#### Finished Successfully
+from p0_model import get_model
+
+get_model_func = lambda: get_model(
+    embedding_matrix,
+    cfg.sentences_length,
+    cfg.dropout_rate,
+    cfg.recurrent_units,
+    cfg.dense_size)
+
+from train_utils import train_folds
+print("Starting to train models...")
+models = train_folds(x_train, y_train, cfg.fold_count, cfg.batch_size, get_model_func)
+
+
 
 
 
